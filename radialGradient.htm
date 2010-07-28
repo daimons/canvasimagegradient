@@ -1,0 +1,45 @@
+<html>
+<head>
+    <title>Linear Gradient</title>
+    <script src="canvasImageGradient.js" language"javascript" type="text/javascript"></script>
+    <script src="images.js" language"javascript" type="text/javascript"></script>
+    <script language="javascript" type="text/javascript">
+        /*
+        NOTE: Images are stored as base64 strings in the images.js file to overcome the security problems 
+        of running the html file locally (see http://aaronmt.com/?p=673 and associated comments).
+        */
+        function displayImage() {
+            var desertImage = new Image();
+            var googleImage = new Image();
+
+            desertImage.onload = function() {
+                googleImage.onload = function() {
+                    var ctx = document.getElementById("testCanvas").getContext("2d");
+                    ctx.canvas.width = desertImage.width;
+                    ctx.canvas.height = desertImage.height;
+
+                    ctx.drawImage(desertImage, 0, 0);
+
+                    var centerX = googleImage.width/2;
+                    var centerY = googleImage.height/2;
+
+                    var radialGradient = ctx.createRadialGradient(centerX, centerY, 1, centerX, centerY, centerX);
+                    radialGradient.addColorStop(0, "transparent");
+                    radialGradient.addColorStop(1, "#000");
+
+                    ctx.drawImageGradient(googleImage, 12, 65, radialGradient);
+                }
+
+                googleImage.src = getGoogleImage();
+            }
+
+            desertImage.src = getDesertImage();
+        }
+    </script>
+</head>
+<body onload="displayImage()">
+    <canvas id="testCanvas"></canvas>
+    <span id="dataURL"></span>
+    
+</body>
+</html>
