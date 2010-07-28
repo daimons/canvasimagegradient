@@ -1,4 +1,4 @@
-﻿CanvasRenderingContext2D.prototype.drawImageGradient = function(img, x, y) {
+﻿CanvasRenderingContext2D.prototype.drawImageGradient = function(img, x, y, gradient) {
     var ctx = this;
 
     // Is this needed?
@@ -10,40 +10,66 @@
 
     var imgWidth = img.width;
     var imgHeight = img.height;
-    var imageCanvas = document.createElement("canvas");
 
-    // Handle IE
-    if (!imageCanvas.getContext) {
-        ctx.drawImage(img, x, y);
-        return;
+    if (!this.imageGradientCanvas) {
+        this.imageGradientCanvas = document.createElement("canvas");
+    }
+    
+    this.imageGradientCanvas.width = imgWidth;
+    this.imageGradientCanvas.height = imgHeight;
+
+    var imgCtx = this.imageGradientCanvas.getContext("2d");
+
+    // Create default gradient.
+    if (!gradient) {
+        var gradient = imgCtx.createLinearGradient(0, 0, 0, imgHeight);
+        gradient.addColorStop(0, "transparent");
+        gradient.addColorStop(1, "#000");
     }
 
-    imageCanvas.width = imgWidth;
-    imageCanvas.height = imgHeight;
+    var gradientImageData = createRectangularGradientImageData();
 
-    var imgCtx = imageCanvas.getContext("2d");
-    
     imgCtx.drawImage(img, 0, 0);
 
-    var gradientImageData = imgCtx.getImageData(0, 0, imgWidth, imgHeight);
+    var imageImageData = imgCtx.getImageData(0, 0, imgWidth, imgHeight);
 
     var ctxImageData = ctx.getImageData(x, y, imgWidth, imgHeight);
 
-    for (var i = 0; i < ctxImageData.data.length; i += 4) {
-        updatePixel(i);
-        updatePixel(i + 1);
-        updatePixel(i + 2);
+    var opacity = 1;
+
+    var time1 = new Date().getTime();
+
+    var ctxImageDataData = ctxImageData.data;
+    var imageImageDataData = imageImageData.data;
+    var gradientImageDataData = gradientImageData.data;
+    var ctxImageDataDataLength = ctxImageData.data.length;
+    
+    for (var i = 0; i < ctxImageDataDataLength; i += 4) {
+        opacity = gradientImageDataData[i + 3] / 255;
+
+        // Update rgb values of context image data.
+        ctxImageDataData[i] =
+            (imageImageDataData[i] * opacity) +
+            (ctxImageDataData[i] * (1 - opacity));
+
+        ctxImageDataData[i + 1] =
+            (imageImageDataData[i + 1] * opacity) +
+            (ctxImageDataData[i + 1] * (1 - opacity));
+
+        ctxImageDataData[i + 2] =
+            (imageImageDataData[i + 2] * opacity) +
+            (ctxImageDataData[i + 2] * (1 - opacity));
+
     }
+
+    $("#main").prepend("<p>End: " + (new Date().getTime() - time1) + "</p>");
 
     ctx.putImageData(ctxImageData, x, y);
 
-    function updatePixel(index) {
-        var opacity = parseInt(i / 4 / (img.width - 1)) / img.height;
-        opacity = opacity > 1 ? 1 : opacity;
-        
-        // Add image pixel value to source pixel value.
-        ctxImageData.data[index] =
-            (gradientImageData.data[index] * opacity) +
-            (ctxImageData.data[index] * (1 - opacity));
+    function createRectangularGradientImageData() {
+        imgCtx.fillStyle = gradient;
+        imgCtx.fillRect(0, 0, imgWidth, imgHeight);
+
+        return imgCtx.getImageData(0, 0, imgWidth, imgHeight);
     }
 }
