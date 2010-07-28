@@ -37,8 +37,6 @@
 
     var opacity = 1;
 
-    var time1 = new Date().getTime();
-
     var ctxImageDataData = ctxImageData.data;
     var imageImageDataData = imageImageData.data;
     var gradientImageDataData = gradientImageData.data;
@@ -61,8 +59,6 @@
             (ctxImageDataData[i + 2] * (1 - opacity));
 
     }
-
-    $("#main").prepend("<p>End: " + (new Date().getTime() - time1) + "</p>");
 
     ctx.putImageData(ctxImageData, x, y);
 
