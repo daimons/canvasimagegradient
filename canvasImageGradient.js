@@ -1,71 +1,79 @@
-﻿CanvasRenderingContext2D.prototype.drawImageGradient = function(img, x, y, gradient) {
-    var ctx = this;
+﻿(function () {
+    // If browser doesn't support canvas exit function.
+    if (!CanvasRenderingContext2D) return;
 
-    // Is this needed?
-    if (!img.complete) {
-        var err = new Error();
-        err.message = "CanvasRenderingContext2D.prototype.drawImageGradient: The image has not loaded."
-        throw err;
-    }
+    // holds a dynamically create canvas element that the gradient is drawn onto.
+    var imageGradientCanvas;
 
-    var imgWidth = img.width;
-    var imgHeight = img.height;
+    CanvasRenderingContext2D.prototype.drawImageGradient = function (img, x, y, gradient) {
+        var ctx = this;
 
-    if (!this.imageGradientCanvas) {
-        this.imageGradientCanvas = document.createElement("canvas");
-    }
-    
-    this.imageGradientCanvas.width = imgWidth;
-    this.imageGradientCanvas.height = imgHeight;
+        // throw error if image to use for gradient hasn't loaded.
+        if (!img.complete) {
+            var err = new Error();
+            err.message = "CanvasRenderingContext2D.prototype.drawImageGradient: The image has not loaded."
+            throw err;
+        }
 
-    var imgCtx = this.imageGradientCanvas.getContext("2d");
+        var imgWidth = img.width;
+        var imgHeight = img.height;
 
-    // Create default gradient.
-    if (!gradient) {
-        var gradient = imgCtx.createLinearGradient(0, 0, 0, imgHeight);
-        gradient.addColorStop(0, "transparent");
-        gradient.addColorStop(1, "#000");
-    }
+        if (!imageGradientCanvas) {
+            imageGradientCanvas = document.createElement("canvas");
+        }
 
-    var gradientImageData = createRectangularGradientImageData();
+        imageGradientCanvas.width = imgWidth;
+        imageGradientCanvas.height = imgHeight;
 
-    imgCtx.drawImage(img, 0, 0);
+        var imgCtx = imageGradientCanvas.getContext("2d");
 
-    var imageImageData = imgCtx.getImageData(0, 0, imgWidth, imgHeight);
+        // Create default gradient.
+        if (!gradient) {
+            var gradient = imgCtx.createLinearGradient(0, 0, 0, imgHeight);
+            gradient.addColorStop(0, "transparent");
+            gradient.addColorStop(1, "#000");
+        }
 
-    var ctxImageData = ctx.getImageData(x, y, imgWidth, imgHeight);
+        var gradientImageData = createRectangularGradientImageData();
 
-    var opacity = 1;
+        imgCtx.drawImage(img, 0, 0);
 
-    var ctxImageDataData = ctxImageData.data;
-    var imageImageDataData = imageImageData.data;
-    var gradientImageDataData = gradientImageData.data;
-    var ctxImageDataDataLength = ctxImageData.data.length;
-    
-    for (var i = 0; i < ctxImageDataDataLength; i += 4) {
-        opacity = gradientImageDataData[i + 3] / 255;
+        var imageImageData = imgCtx.getImageData(0, 0, imgWidth, imgHeight);
 
-        // Update rgb values of context image data.
-        ctxImageDataData[i] =
+        var ctxImageData = ctx.getImageData(x, y, imgWidth, imgHeight);
+
+        var opacity = 1;
+
+        var ctxImageDataData = ctxImageData.data;
+        var imageImageDataData = imageImageData.data;
+        var gradientImageDataData = gradientImageData.data;
+        var ctxImageDataDataLength = ctxImageData.data.length;
+
+        var i;
+        for (i = 0; i < ctxImageDataDataLength; i += 4) {
+            opacity = gradientImageDataData[i + 3] / 255;
+
+            // Update rgb values of context image data.
+            ctxImageDataData[i] =
             (imageImageDataData[i] * opacity) +
             (ctxImageDataData[i] * (1 - opacity));
 
-        ctxImageDataData[i + 1] =
+            ctxImageDataData[i + 1] =
             (imageImageDataData[i + 1] * opacity) +
             (ctxImageDataData[i + 1] * (1 - opacity));
 
-        ctxImageDataData[i + 2] =
+            ctxImageDataData[i + 2] =
             (imageImageDataData[i + 2] * opacity) +
             (ctxImageDataData[i + 2] * (1 - opacity));
+        }
 
+        ctx.putImageData(ctxImageData, x, y);
+
+        function createRectangularGradientImageData() {
+            imgCtx.fillStyle = gradient;
+            imgCtx.fillRect(0, 0, imgWidth, imgHeight);
+
+            return imgCtx.getImageData(0, 0, imgWidth, imgHeight);
+        }
     }
-
-    ctx.putImageData(ctxImageData, x, y);
-
-    function createRectangularGradientImageData() {
-        imgCtx.fillStyle = gradient;
-        imgCtx.fillRect(0, 0, imgWidth, imgHeight);
-
-        return imgCtx.getImageData(0, 0, imgWidth, imgHeight);
-    }
-}
+})();
